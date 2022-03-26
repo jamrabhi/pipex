@@ -45,7 +45,20 @@ void	print_error(char *str)
 	exit(EXIT_FAILURE);
 }
 
-void	child1(int file1, int *pipefd, char **path_envp, char **argv, char **envp)
+void	free_all(char **array)
+{
+	int	i;
+
+	i = 0;
+	while (array[i])
+	{
+		free(array[i]);
+		i++;
+	}
+	free(array);	
+}
+
+int	child1(int file1, int *pipefd, char **path_envp, char **argv, char **envp)
 {
 	int		i;
 	char	*path_trial;
@@ -67,14 +80,16 @@ void	child1(int file1, int *pipefd, char **path_envp, char **argv, char **envp)
 		cmd_trial = ft_strjoin(path_trial, cmd_argv[0]);
 		free(path_trial);
 		if (access(cmd_trial, F_OK) == 0)
-			break ;
+			execve(cmd_trial, cmd_argv, envp);
 		free(cmd_trial);
 	}
-	if (execve(cmd_trial, cmd_argv, envp) == -1)
-		perror("execve");
+	free_all(path_envp);
+	free_all(cmd_argv);
+	ft_putstr_fd("bad command\n",2);
+	return (127);
 }
 
-void	child2(int file2, int *pipefd, char **path_envp, char **argv, char **envp)
+int	child2(int file2, int *pipefd, char **path_envp, char **argv, char **envp)
 {
 	int		i;
 	char	*path_trial;
@@ -96,11 +111,37 @@ void	child2(int file2, int *pipefd, char **path_envp, char **argv, char **envp)
 		cmd_trial = ft_strjoin(path_trial, cmd_argv[0]);
 		free(path_trial);
 		if (access(cmd_trial, F_OK) == 0)
-			break ;
+			execve(cmd_trial, cmd_argv, envp);
 		free(cmd_trial);
 	}
-	if (execve(cmd_trial, cmd_argv, envp) == -1)
-		perror("execve");
+	free_all(path_envp);
+	free_all(cmd_argv);
+	ft_putstr_fd("bad command\n",2);
+	return (127);
+}
+
+int	test_cmd(char *cmd, char **paths_envp)
+{
+	int		i;
+	char	*path_trial;
+	char	*cmd_trial;
+	char	**cmd_argv;
+
+	i = -1;
+	cmd_argv = ft_split(cmd, ' ');
+	while (paths_envp[++i])
+	{
+		path_trial = ft_strjoin(paths_envp[i], "/");
+		cmd_trial = ft_strjoin(path_trial, cmd_argv[0]);
+		free(path_trial);
+		if (access(cmd_trial, F_OK) == 0)
+			return (0);
+		free(cmd_trial);
+	}
+	free_all(paths_envp);
+	ft_putstr_fd(cmd_argv[0],2);
+	ft_putstr_fd(": command not found\n",2);
+	return (1);
 }
 
 void	pipex(int file1, int file2, char **argv, char **envp)
@@ -111,6 +152,8 @@ void	pipex(int file1, int file2, char **argv, char **envp)
 	int		i;
 	char	**paths_envp;
 	int 	status;
+	// int		return_child1;
+	// int		return_child2;
 
 	i = 0;
 	while (envp[i])
@@ -119,18 +162,42 @@ void	pipex(int file1, int file2, char **argv, char **envp)
 			paths_envp = ft_split(envp[i] + 5, ':');
 		i++;
 	}
+	if (test_cmd(argv[2], paths_envp) == 1 || test_cmd(argv[3], paths_envp) == 1)
+		exit(127);
 	if (pipe(pipefd) == -1)
+	{
 		print_error("pipe");
+		free_all(paths_envp);
+	}
 	child1_pid = fork();
 	if (child1_pid == -1)
+	{
 		print_error("fork child1_pid");
+		free_all(paths_envp);
+	}
 	if (child1_pid == 0)
-		child1(file1, pipefd, paths_envp, argv, envp);
+		/*return_child1 = */child1(file1, pipefd, paths_envp, argv, envp);
+	// if (return_child1 == 127)
+	// {
+	// 	close(pipefd[0]);
+	// 	close(pipefd[1]);
+	// 	exit(127);
+	// }
 	child2_pid = fork();
 	if (child2_pid == -1)
+	{
 		print_error("fork child2_pid");
+		free_all(paths_envp);
+	}
 	if (child2_pid == 0)
-		child2(file2, pipefd, paths_envp, argv, envp);
+		/*return_child2 = */child2(file2, pipefd, paths_envp, argv, envp);
+	// if (return_child2 == 127)
+	// {
+	// 	close(pipefd[0]);
+	// 	close(pipefd[1]);
+	// 	exit(127);
+	// }
+	free_all(paths_envp);
 	close(pipefd[0]);
 	close(pipefd[1]);
 	waitpid(child1_pid, &status, 0);
@@ -145,7 +212,7 @@ int	main(int argc, char *argv[], char *envp[])
 	if (argc != 5)
 	{
 		ft_putstr_fd("Error : must have 4 arguments\nEx: ./pipex file1 cmd1 cmd\
-2 file2\n", 2);
+2 file2\n", 1);
 		exit(EXIT_FAILURE);
 	}
 	file1 = open(argv[1], O_RDONLY);
