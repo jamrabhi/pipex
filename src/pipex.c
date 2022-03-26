@@ -58,7 +58,7 @@ void	free_all(char **array)
 	free(array);	
 }
 
-int	child1(int file1, int *pipefd, char **path_envp, char **argv, char **envp)
+void	child1(int file1, int *pipefd, char **path_envp, char **argv, char **envp)
 {
 	int		i;
 	char	*path_trial;
@@ -85,11 +85,9 @@ int	child1(int file1, int *pipefd, char **path_envp, char **argv, char **envp)
 	}
 	free_all(path_envp);
 	free_all(cmd_argv);
-	ft_putstr_fd("bad command\n",2);
-	return (127);
 }
 
-int	child2(int file2, int *pipefd, char **path_envp, char **argv, char **envp)
+void child2(int file2, int *pipefd, char **path_envp, char **argv, char **envp)
 {
 	int		i;
 	char	*path_trial;
@@ -116,8 +114,6 @@ int	child2(int file2, int *pipefd, char **path_envp, char **argv, char **envp)
 	}
 	free_all(path_envp);
 	free_all(cmd_argv);
-	ft_putstr_fd("bad command\n",2);
-	return (127);
 }
 
 int	test_cmd(char *cmd, char **paths_envp)
@@ -135,12 +131,16 @@ int	test_cmd(char *cmd, char **paths_envp)
 		cmd_trial = ft_strjoin(path_trial, cmd_argv[0]);
 		free(path_trial);
 		if (access(cmd_trial, F_OK) == 0)
+		{
+			free(cmd_trial);
+			free_all(cmd_argv);
 			return (0);
+		}
 		free(cmd_trial);
 	}
-	free_all(paths_envp);
 	ft_putstr_fd(cmd_argv[0],2);
 	ft_putstr_fd(": command not found\n",2);
+			free_all(cmd_argv);
 	return (1);
 }
 
@@ -162,8 +162,12 @@ void	pipex(int file1, int file2, char **argv, char **envp)
 			paths_envp = ft_split(envp[i] + 5, ':');
 		i++;
 	}
-	if (test_cmd(argv[2], paths_envp) == 1 || test_cmd(argv[3], paths_envp) == 1)
+	test_cmd(argv[2], paths_envp);
+	if (test_cmd(argv[3], paths_envp) == 1)
+	{
+		free_all(paths_envp);
 		exit(127);
+	}
 	if (pipe(pipefd) == -1)
 	{
 		print_error("pipe");
