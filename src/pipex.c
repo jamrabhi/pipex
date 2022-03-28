@@ -12,32 +12,19 @@
 
 #include <pipex.h>
 
-// void	child_process(int fd, char *cmd, char *argv[], char **my_paths)
-// {
-// 	char *cmd_trial;
-// 	char **cmd_arg = ft_split(argv[2], ' ');
+t_pipex g_pipex;
 
-// 	int i = 0;
+void	show_array(char **array)
+{
+	int	i;
 
-// 	if (dup2(1, fd) < 0)
-// 	{
-// 		perror("dup2");
-// 		exit(EXIT_FAILURE);
-// 	}
-// 	dup2(fd, STDIN_FILENO);
-// 	close(fd);
-// 	while (my_paths[i])
-// 	{
-// 		cmd_trial = ft_strjoin(my_paths[i], "/");
-// 		cmd_trial = ft_strjoin(cmd_trial, cmd_arg[0]);
-// 		if (execve(cmd_trial, cmd_arg, my_paths) == -1)
-// 			free(cmd_trial);
-// 		i++;
-// 	}
-// 	printf("FAIL\n");
-// 	perror("execve");
-// 	exit(EXIT_FAILURE);
-// }
+	i = 0;
+	while (array[i])
+	{
+		printf("Line[%d] = |%s|\n", i, array[i]);
+		i++;
+	}
+}
 
 void	print_error(char *str)
 {
@@ -55,7 +42,8 @@ void	free_all(char **array)
 		free(array[i]);
 		i++;
 	}
-	free(array);	
+	if (array)
+		free(array);	
 }
 
 void	child1(int file1, int *pipefd, char **path_envp, char **argv, char **envp)
@@ -73,9 +61,12 @@ void	child1(int file1, int *pipefd, char **path_envp, char **argv, char **envp)
 	if (dup2(pipefd[1], STDOUT_FILENO) == -1)
 		print_error("dup2 pipefd[1]");
 	close(pipefd[0]);
-	close(pipefd[1]);
+	// close(pipefd[1]); PAS SYR
+	if (access(cmd_argv[0], F_OK) == 0) // dans le cas où on donne directement executable ex : cmd1 = /bin/ls
+		execve(cmd_argv[0], cmd_argv, envp); // dans le cas où on donne directement executable ex : cmd1 = /bin/ls
 	while (path_envp[++i])
 	{
+		printf("noooon");
 		path_trial = ft_strjoin(path_envp[i], "/");
 		cmd_trial = ft_strjoin(path_trial, cmd_argv[0]);
 		free(path_trial);
@@ -102,7 +93,9 @@ void child2(int file2, int *pipefd, char **path_envp, char **argv, char **envp)
 	if (dup2(pipefd[0], STDIN_FILENO) == -1)
 		print_error("dup2 pipefd[0]");
 	close(pipefd[1]);
-	close(pipefd[0]);
+	// close(pipefd[0]); PAS SUR
+	if (access(cmd_argv[0], F_OK) == 0)
+		execve(cmd_argv[0], cmd_argv, envp);
 	while (path_envp[++i])
 	{
 		path_trial = ft_strjoin(path_envp[i], "/");
@@ -116,32 +109,64 @@ void child2(int file2, int *pipefd, char **path_envp, char **argv, char **envp)
 	free_all(cmd_argv);
 }
 
-int	test_cmd(char *cmd, char **paths_envp)
+// int	get_cmd_path(char *cmd)
+// {
+// 	int		i;
+// 	char	*path_trial;
+// 	char	*cmd_trial;
+// 	char	**cmd_array;
+
+// 	i = -1;
+// 	cmd_array = ft_split(cmd, ' ');
+// 	if (access(cmd_array[0], F_OK) == 0)
+// 	{
+// 		g_pipex.cmd_path = ft_strdup(cmd_array[0]);
+// 		free_all(cmd_array);
+// 		return (0);
+// 	}
+// 	while (g_pipex.paths_envp[++i])
+// 	{
+// 		path_trial = ft_strjoin(g_pipex.paths_envp[i], "/");
+// 		cmd_trial = ft_strjoin(path_trial, cmd_array[0]);
+// 		free(path_trial);
+// 		if (access(cmd_trial, F_OK) == 0)
+// 		{
+// 			g_pipex.cmd_path = ft_strdup(cmd_trial);
+// 			free(cmd_trial);
+// 			free_all(cmd_array);
+// 			return (0);
+// 		}
+// 		free(cmd_trial);
+// 	}
+// 	ft_putstr_fd(cmd_array[0],2);
+// 	ft_putstr_fd(": command not found\n",2);
+// 	free_all(cmd_array);
+// 	return (1);
+// }
+
+void	get_paths(char *envp[])
 {
 	int		i;
-	char	*path_trial;
-	char	*cmd_trial;
-	char	**cmd_argv;
+	char	**paths;
 
-	i = -1;
-	cmd_argv = ft_split(cmd, ' ');
-	while (paths_envp[++i])
+	i = 0;
+	while (envp[i])
 	{
-		path_trial = ft_strjoin(paths_envp[i], "/");
-		cmd_trial = ft_strjoin(path_trial, cmd_argv[0]);
-		free(path_trial);
-		if (access(cmd_trial, F_OK) == 0)
-		{
-			free(cmd_trial);
-			free_all(cmd_argv);
-			return (0);
-		}
-		free(cmd_trial);
+		if (ft_strncmp(envp[i], "PATH=", 5) == 0)
+			paths = ft_split(envp[i] + 5, ':');
+		i++;
 	}
-	ft_putstr_fd(cmd_argv[0],2);
-	ft_putstr_fd(": command not found\n",2);
-			free_all(cmd_argv);
-	return (1);
+	i = 0;
+	while (paths[i])
+		i++;
+	g_pipex.paths_envp = malloc(sizeof(char **) * i);
+	i = 0;
+	while (paths[i])
+	{
+		g_pipex.paths_envp[i] = ft_strjoin(paths[i], "/");
+		i++;
+	}
+	free_all(paths);
 }
 
 void	pipex(int file1, int file2, char **argv, char **envp)
@@ -152,8 +177,6 @@ void	pipex(int file1, int file2, char **argv, char **envp)
 	int		i;
 	char	**paths_envp;
 	int 	status;
-	// int		return_child1;
-	// int		return_child2;
 
 	i = 0;
 	while (envp[i])
@@ -162,30 +185,27 @@ void	pipex(int file1, int file2, char **argv, char **envp)
 			paths_envp = ft_split(envp[i] + 5, ':');
 		i++;
 	}
-	test_cmd(argv[2], paths_envp);
-	if (test_cmd(argv[3], paths_envp) == 1)
-	{
-		free_all(paths_envp);
-		exit(127);
-	}
+	// if (test_cmd(argv[3], paths_envp) == 1)
+	// {
+	// 	test_cmd(argv[2], paths_envp);
+	// 	free_all(paths_envp); // pas sur // pr montrer cmd not found pour le 1er
+	// 	exit(127);
+	// }
 	if (pipe(pipefd) == -1)
 	{
 		print_error("pipe");
 		free_all(paths_envp);
 	}
-	child1_pid = fork();
-	if (child1_pid == -1)
-	{
-		print_error("fork child1_pid");
-		free_all(paths_envp);
-	}
-	if (child1_pid == 0)
-		/*return_child1 = */child1(file1, pipefd, paths_envp, argv, envp);
-	// if (return_child1 == 127)
+	// if (test_cmd(argv[2], paths_envp) == 0)
 	// {
-	// 	close(pipefd[0]);
-	// 	close(pipefd[1]);
-	// 	exit(127);
+		child1_pid = fork();
+		if (child1_pid == -1)
+		{
+			print_error("fork child1_pid");
+			free_all(paths_envp);
+		}
+		if (child1_pid == 0)
+			child1(file1, pipefd, paths_envp, argv, envp);
 	// }
 	child2_pid = fork();
 	if (child2_pid == -1)
@@ -194,74 +214,37 @@ void	pipex(int file1, int file2, char **argv, char **envp)
 		free_all(paths_envp);
 	}
 	if (child2_pid == 0)
-		/*return_child2 = */child2(file2, pipefd, paths_envp, argv, envp);
-	// if (return_child2 == 127)
-	// {
-	// 	close(pipefd[0]);
-	// 	close(pipefd[1]);
-	// 	exit(127);
-	// }
+		child2(file2, pipefd, paths_envp, argv, envp);
 	free_all(paths_envp);
 	close(pipefd[0]);
 	close(pipefd[1]);
 	waitpid(child1_pid, &status, 0);
 	waitpid(child2_pid, &status, 0);
+	// if (WIFEXITED(status) != 0 && WIFEXITED(status) != 1)
+	// 	exit(WEXITSTATUS(status));
 }
 
 int	main(int argc, char *argv[], char *envp[])
 {
-	int	file1;
-	int	file2;
+	// int	file1;
+	// int	file2;
 
+	(void)argv;
 	if (argc != 5)
 	{
-		ft_putstr_fd("Error : must have 4 arguments\nEx: ./pipex file1 cmd1 cmd\
-2 file2\n", 1);
+		ft_putstr_fd("Usage: ./pipex file1 cmd1 cmd2 file2\n", 2);
 		exit(EXIT_FAILURE);
 	}
-	file1 = open(argv[1], O_RDONLY);
-	file2 = open(argv[4], O_WRONLY | O_TRUNC | O_CREAT, 0644);
-	if (file1 == -1 || file2 == -1)
-		print_error("open");
-	pipex(file1, file2, argv, envp);
+	ft_bzero(&g_pipex, sizeof(g_pipex));
+	get_paths(envp);
+	// get_cmd_path(argv[2]);
+	// printf("cmd_path = %s\n", g_pipex.cmd_path);
+	// file1 = open(argv[1], O_RDONLY);
+	// file2 = open(argv[4], O_WRONLY | O_TRUNC | O_CREAT, 0644);
+	// if (file1 == -1 || file2 == -1)
+	// 	print_error("open");
+	// pipex(file1, file2, argv, envp);
+	free_all(g_pipex.paths_envp);
+	// free(g_pipex.cmd_path);
 	return (0);
 }
-
-// int	main(int argc, char *argv[], char *envp[])
-// {
-// 	int		fd[2];
-// 	pid_t	pid;
-// 	char	*cmd1;
-// 	char	*path_from_envp;
-// 	int		i;
-// 	char	**my_paths;
-
-// 	i = 0;
-// 	while(envp[i])
-// 	{
-// 		if (ft_strncmp(envp[i], "PATH=", 5) == 0)
-// 			my_paths = ft_split(envp[i] + 5, ':');
-// 		i++;
-// 	}
-// 	i = 0;
-// 	// while (my_paths[i])
-// 	// {
-// 	// 	printf("%s\n", my_paths[i]);
-// 	// 	i++;
-// 	// }
-// 	if (pipe(fd) == -1)
-// 	{
-// 		perror("pipe");
-// 		exit(EXIT_FAILURE);
-// 	}
-// 	pid = fork();
-// 	if (pid == -1)
-// 	{
-// 		perror("Fork");
-// 		exit(EXIT_FAILURE);
-// 	}
-// 	wait(NULL);
-// 	if (pid == 0)
-// 		child_process(fd[0], cmd1, argv, my_paths);
-// 	return (0);
-// }

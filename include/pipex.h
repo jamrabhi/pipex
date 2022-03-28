@@ -22,4 +22,13 @@
 # include <fcntl.h>
 # include <stdio.h>
 
+typedef struct  s_pipex
+{
+    char **paths_envp;
+    char *cmd_path;
+
+}               t_pipex;
+
+extern t_pipex g_pipex;
+
 #endif
