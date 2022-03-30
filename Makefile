@@ -16,7 +16,7 @@ CC = gcc
 
 CFLAGS = -Wall -Wextra -Werror
 
-SRC = src/pipex.c
+SRC = src/pipex.c src/pipex_utils.c
 
 OBJ = $(SRC:.c=.o)
 
@@ -37,19 +37,10 @@ $(NAME) : $(OBJ)
 
 	@echo "Compiling Pipex ..."
 	@$(CC) $(CFLAGS) $(OBJ) -L $(LIBDIR) -lft -o $(NAME)
-	@echo "DONE \n"
+	@echo "DONE"
 
 .c.o:
 	@${CC} ${CFLAGS} -I $(INCDIR) -I$(LIBDIR) -c $< -o $@
-
-debug: $(OBJ)
-	@echo "Compiling Libft ..."
-	@cd $(LIBDIR) && make
-	@echo "DONE \n"
-
-	@echo "Compiling Pipex with fsanitize ..."
-	@$(CC) $(CFLAGS) $(OBJ) -g3 -fsanitize=address -L $(LIBDIR) -lft -o $(NAME)
-	@echo "DONE \n"
 
 clean:
 	@echo "Deleting Libft objects files ..."
@@ -58,7 +49,7 @@ clean:
 
 	@echo "Deleting Pipex objects files ..."
 	@rm -f $(OBJ)
-	@echo "DONE \n"
+	@echo "DONE"
 
 fclean: clean
 
@@ -68,7 +59,7 @@ fclean: clean
 	
 	@echo "Deleting Pipex's binary ..."
 	@rm -f $(NAME)
-	@echo "DONE \n"
+	@echo "DONE"
 
 re: fclean all
 

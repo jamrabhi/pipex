@@ -22,13 +22,24 @@
 # include <fcntl.h>
 # include <stdio.h>
 
-typedef struct  s_pipex
+typedef struct s_pipex
 {
-    char **paths_envp;
-    char *cmd_path;
+	char	**paths_envp;
+	char	*cmd1_path;
+	char	*cmd2_path;
+	char	**cmd1_array;
+	char	**cmd2_array;
+	int		file1;
+	int		file2;
 
-}               t_pipex;
+}				t_pipex;
 
-extern t_pipex g_pipex;
+extern t_pipex	g_pipex;
+
+void	get_paths(char *envp[]);
+char	*get_cmd_path(char *cmd);
+void	print_error(char *str);
+void	free_struct(void);
+void	free_all(char **array);
 
 #endif
