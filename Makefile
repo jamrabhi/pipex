@@ -22,9 +22,9 @@ OBJ = $(SRC:.c=.o)
 
 INCDIR = include
 
-LIBDIR = lib/libft/
+LIBDIR = libft/
 
-LIB = lib/libft/libft.a
+LIB = libft/libft.a
 
 MAKEFLAGS += --no-print-directory
 
@@ -62,5 +62,3 @@ fclean: clean
 	@echo "DONE"
 
 re: fclean all
-
-redebug: fclean debug
