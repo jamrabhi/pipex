@@ -26,25 +26,25 @@ void	free_all(char **array)
 		free(array);
 }
 
-void	free_struct(void)
+void	free_struct(t_pipex *data)
 {
-	free_all(g_pipex.paths_envp);
-	free(g_pipex.cmd1_path);
-	free(g_pipex.cmd2_path);
-	free_all(g_pipex.cmd1_array);
-	free_all(g_pipex.cmd2_array);
-	close(g_pipex.file1);
-	close(g_pipex.file2);
+	free_all(data->paths_envp);
+	free(data->cmd1_path);
+	free(data->cmd2_path);
+	free_all(data->cmd1_array);
+	free_all(data->cmd2_array);
+	close(data->file1);
+	close(data->file2);
 }
 
-void	print_error(char *str)
+void	print_error(char *str, t_pipex *data)
 {
 	perror(str);
-	free_struct();
+	free_struct(data);
 	exit(EXIT_FAILURE);
 }
 
-char	*get_cmd_path(char *cmd)
+char	*get_cmd_path(char *cmd, t_pipex *data)
 {
 	int		i;
 	char	*cmd_trial;
@@ -55,9 +55,9 @@ char	*get_cmd_path(char *cmd)
 		cmd_trial = ft_strdup(cmd);
 		return (cmd_trial);
 	}
-	while (g_pipex.paths_envp[i])
+	while (data->paths_envp[i])
 	{
-		cmd_trial = ft_strjoin(g_pipex.paths_envp[i], cmd);
+		cmd_trial = ft_strjoin(data->paths_envp[i], cmd);
 		if (access(cmd_trial, F_OK) == 0)
 			return (cmd_trial);
 		free(cmd_trial);
@@ -66,7 +66,7 @@ char	*get_cmd_path(char *cmd)
 	return (NULL);
 }
 
-void	get_paths(char *envp[])
+void	get_paths(char *envp[], t_pipex *data)
 {
 	int		i;
 	char	**paths;
@@ -81,13 +81,13 @@ void	get_paths(char *envp[])
 	i = 0;
 	while (paths[i])
 		i++;
-	g_pipex.paths_envp = ft_calloc(i, sizeof(char **) * i);
-	if (!g_pipex.paths_envp)
+	data->paths_envp = ft_calloc(i, sizeof(char **) * i);
+	if (!data->paths_envp)
 		exit(EXIT_FAILURE);
 	i = 0;
 	while (paths[i])
 	{
-		g_pipex.paths_envp[i] = ft_strjoin(paths[i], "/");
+		data->paths_envp[i] = ft_strjoin(paths[i], "/");
 		i++;
 	}
 	free_all(paths);

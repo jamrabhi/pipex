@@ -34,12 +34,10 @@ typedef struct s_pipex
 
 }				t_pipex;
 
-extern t_pipex	g_pipex;
-
-void	get_paths(char *envp[]);
-char	*get_cmd_path(char *cmd);
-void	print_error(char *str);
-void	free_struct(void);
+void	get_paths(char *envp[], t_pipex *data);
+char	*get_cmd_path(char *cmd, t_pipex *data);
+void	print_error(char *str, t_pipex *data);
+void	free_struct(t_pipex *data);
 void	free_all(char **array);
 
 #endif
