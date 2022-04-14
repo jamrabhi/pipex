@@ -28,7 +28,8 @@ void	free_all(char **array)
 
 void	free_struct(t_pipex *data)
 {
-	free_all(data->paths_envp);
+	if (data->paths_envp)
+		free_all(data->paths_envp);
 	free(data->cmd1_path);
 	free(data->cmd2_path);
 	free_all(data->cmd1_array);
@@ -55,13 +56,16 @@ char	*get_cmd_path(char *cmd, t_pipex *data)
 		cmd_trial = ft_strdup(cmd);
 		return (cmd_trial);
 	}
-	while (data->paths_envp[i])
+	if (data->paths_envp)
 	{
-		cmd_trial = ft_strjoin(data->paths_envp[i], cmd);
-		if (access(cmd_trial, F_OK) == 0)
-			return (cmd_trial);
-		free(cmd_trial);
-		i++;
+		while (data->paths_envp[i])
+		{
+			cmd_trial = ft_strjoin(data->paths_envp[i], cmd);
+			if (access(cmd_trial, F_OK) == 0)
+				return (cmd_trial);
+			free(cmd_trial);
+			i++;
+		}
 	}
 	return (NULL);
 }
@@ -71,24 +75,25 @@ void	get_paths(char *envp[], t_pipex *data)
 	int		i;
 	char	**paths;
 
-	i = 0;
-	while (envp[i])
-	{
+	i = -1;
+	paths = NULL;
+	while (envp[++i])
 		if (ft_strncmp(envp[i], "PATH=", 5) == 0)
 			paths = ft_split(envp[i] + 5, ':');
-		i++;
-	}
-	i = 0;
-	while (paths[i])
-		i++;
-	data->paths_envp = ft_calloc(i, sizeof(char **) * i);
-	if (!data->paths_envp)
-		exit(EXIT_FAILURE);
-	i = 0;
-	while (paths[i])
+	if (paths)
 	{
-		data->paths_envp[i] = ft_strjoin(paths[i], "/");
-		i++;
+		i = 0;
+		while (paths[i])
+			i++;
+		data->paths_envp = ft_calloc(i, sizeof(char **) * i);
+		if (!data->paths_envp)
+			exit(EXIT_FAILURE);
+		i = 0;
+		while (paths[i])
+		{
+			data->paths_envp[i] = ft_strjoin(paths[i], "/");
+			i++;
+		}
+		free_all(paths);
 	}
-	free_all(paths);
 }

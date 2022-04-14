@@ -90,7 +90,8 @@ int	main(int argc, char *argv[], char *envp[])
 		exit(EXIT_FAILURE);
 	}
 	ft_bzero(&data, sizeof(data));
-	get_paths(envp, &data);
+	if (*envp)
+		get_paths(envp, &data);
 	data.file1 = open(argv[1], O_RDONLY);
 	data.file2 = open(argv[4], O_WRONLY | O_TRUNC | O_CREAT, 0644);
 	data.cmd1_array = ft_split(argv[2], ' ');
