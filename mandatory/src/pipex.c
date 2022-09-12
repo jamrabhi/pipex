@@ -67,15 +67,15 @@ void	pipex(char *envp[], t_pipex *data)
 		print_error("fork child1_pid", data);
 	if (child1_pid == 0)
 		child1(pipefd, envp, data);
+	waitpid(child1_pid, &status, 0);
 	child2_pid = fork();
 	if (child2_pid == -1)
 		print_error("fork child2_pid", data);
 	if (child2_pid == 0)
 		child2(pipefd, envp, data);
+	waitpid(child2_pid, &status, 0);
 	close(pipefd[0]);
 	close(pipefd[1]);
-	waitpid(child1_pid, &status, 0);
-	waitpid(child2_pid, &status, 0);
 	free_struct(data);
 	exit(WEXITSTATUS(status));
 }
@@ -84,7 +84,7 @@ int	main(int argc, char *argv[], char *envp[])
 {
 	t_pipex	data;
 
-	if (argc != 5)
+	if (argc != 5 || !ft_strlen(argv[1]) || !ft_strlen(argv[4]))
 	{
 		ft_putstr_fd("Usage: ./pipex file1 cmd1 cmd2 file2\n", 2);
 		exit(EXIT_FAILURE);
