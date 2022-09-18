@@ -14,7 +14,7 @@ NAME = pipex
 
 CC = gcc
 
-CFLAGS = -Wall -Wextra -Werror
+CFLAGS = -Wall -Wextra -Werror -g
 
 SRC = mandatory/src/pipex.c mandatory/src/pipex_utils.c
 

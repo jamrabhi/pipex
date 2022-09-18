@@ -21,6 +21,8 @@ void	child1(int *pipefd, char *envp[], t_pipex *data)
 			ft_putstr_fd(data->cmd1_array[0], 2);
 			ft_putstr_fd(": command not found\n", 2);
 		}
+		close(pipefd[0]);
+		close(pipefd[1]);
 		free_struct(data);
 		exit(EXIT_FAILURE);
 	}
@@ -40,6 +42,8 @@ void	child2(int *pipefd, char *envp[], t_pipex *data)
 	{
 		ft_putstr_fd(data->cmd2_array[0], 2);
 		ft_putstr_fd(": command not found\n", 2);
+		close(pipefd[0]);
+		close(pipefd[1]);
 		free_struct(data);
 		exit(127);
 	}
@@ -73,9 +77,9 @@ void	pipex(char *envp[], t_pipex *data)
 		print_error("fork child2_pid", data);
 	if (child2_pid == 0)
 		child2(pipefd, envp, data);
-	waitpid(child2_pid, &status, 0);
 	close(pipefd[0]);
 	close(pipefd[1]);
+	waitpid(child2_pid, &status, 0);
 	free_struct(data);
 	exit(WEXITSTATUS(status));
 }
