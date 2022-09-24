@@ -51,20 +51,23 @@ char	*get_cmd_path(char *cmd, t_pipex *data)
 	char	*cmd_trial;
 
 	i = 0;
-	if (access(cmd, F_OK) == 0)
+	if (ft_strlen(cmd) > 0)
 	{
-		cmd_trial = ft_strdup(cmd);
-		return (cmd_trial);
-	}
-	if (data->paths_envp)
-	{
-		while (data->paths_envp[i])
+		if (access(cmd, F_OK) == 0)
 		{
-			cmd_trial = ft_strjoin(data->paths_envp[i], cmd);
-			if (access(cmd_trial, F_OK) == 0)
-				return (cmd_trial);
-			free(cmd_trial);
-			i++;
+			cmd_trial = ft_strdup(cmd);
+			return (cmd_trial);
+		}
+		if (data->paths_envp)
+		{
+			while (data->paths_envp[i])
+			{
+				cmd_trial = ft_strjoin(data->paths_envp[i], cmd);
+				if (access(cmd_trial, F_OK) == 0)
+					return (cmd_trial);
+				free(cmd_trial);
+				i++;
+			}
 		}
 	}
 	return (NULL);
@@ -85,7 +88,7 @@ void	get_paths(char *envp[], t_pipex *data)
 		i = 0;
 		while (paths[i])
 			i++;
-		data->paths_envp = ft_calloc(i, sizeof(char **) * i);
+		data->paths_envp = ft_calloc(i + 1, sizeof(char **) * i + 1);
 		if (!data->paths_envp)
 			exit(EXIT_FAILURE);
 		i = 0;
